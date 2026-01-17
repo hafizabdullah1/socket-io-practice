@@ -1,44 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { socket } from './socket';
-import { ConnectionState } from './components/ConnectionState';
-import { ConnectionManager } from './components/ConnectionManager';
-import { Events } from "./components/Events";
-import { MyForm } from './components/MyForm';
+/* eslint-disable no-unused-vars */
 
-export default function App() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [fooEvents, setFooEvents] = useState([]);
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Home from "./pages/Home";
+import "./App.css";
 
-  useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    function onFooEvent(value) {
-      setFooEvents(previous => [...previous, value]);
-    }
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('foo', onFooEvent);
-
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('foo', onFooEvent);
-    };
-  }, []);
+function App() {
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [username, setUsername] = useState(localStorage.getItem("username"));
 
   return (
     <div className="App">
-      <ConnectionState isConnected={isConnected} />
-      <Events events={fooEvents} />
-      <ConnectionManager />
-      <MyForm />
+      <Routes>
+        <Route
+          path="/"
+          element={token ? <Home /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/login"
+          element={<Login setToken={setToken} setUsername={setUsername} />}
+        />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
     </div>
   );
 }
+
+export default App;
