@@ -5,6 +5,8 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js"
 import connectDb from "./config/db.js"
 import jwt from "jsonwebtoken"
+import Message from "./models/Message.js";
+import messageRoutes from "./routes/messageRoutes.js"
 
 connectDb();
 
@@ -17,6 +19,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", authRoutes);
+app.use("/api/messages", messageRoutes);
 
 
 const io = new Server(httpServer, {
@@ -51,29 +54,33 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("User connected:", socket.user.username);
 
-  onlineUsers.set(socket.user.id, socket.id)
-  // userId: userSocketId
+  onlineUsers.set(socket.user.id, socket.id) // userId: userSocketId
 
   socket.on("private_message", ({ content, to }) => { // to -> userId
 
     const recipientSocketId = onlineUsers.get(to);
 
-    socket.to(recipientSocketId).emit("private_message", { content, fromUsername: socket.user.username });
+    try {
+      if (recipientSocketId) {
+        const newMessage = new Message({
+          sender: socket.user.id,
+          receiver: to,
+          content
+        })
+
+        newMessage.save();
+
+        socket.to(recipientSocketId).emit("private_message", { content, from: socket.user.id, fromUsername: socket.user.username });
+      }
+    } catch (error) {
+      console.error("Error saving message in DB:", error);
+    }
   })
 
   socket.on("disconnect", () => {
     onlineUsers.delete(socket.user.id);
     console.log(`${socket.user.username} Disconnected succesfully.`);
   });
-
-  // socket.on("connect", () => {
-  //   console.log("Connected succesfully.");
-  // });
-
-  // socket.on("create-something", (value) => {
-  //   console.log("Something:", value);
-  //   io.emit("foo", value);
-  // });
 });
 
 app.get("/", (req, res) => {

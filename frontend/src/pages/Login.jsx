@@ -18,6 +18,7 @@ const Login = ({ setToken, setUsername }) => {
             setUsername(data.username);
             localStorage.setItem("token", data.token);
             localStorage.setItem("username", data.username);
+            localStorage.setItem("userId", data._id);
             navigate("/");
         } catch (error) {
             console.error(error);
